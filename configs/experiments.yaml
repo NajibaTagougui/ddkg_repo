@@ -1,0 +1,17 @@
+# Each experiment = overrides on configs/base.yaml. Suites list experiment names.
+suites:
+  quick:    [baseline_transformer, full]
+  main:     [baseline_transformer, full]
+  ablation: [full, image_only_gate, static_gate, no_kg, no_cross_attn, no_edge_pruning, dense_kg_attention, k5, k10, k40]
+experiments:
+  full: {}
+  baseline_transformer: {model.mode: baseline}
+  image_only_gate:      {model.caption_gating: false}
+  static_gate:          {knowledge_graph.static_gate: true, model.caption_gating: false}
+  no_kg:                {model.use_kg: false}
+  no_cross_attn:        {model.use_cross_attn: false}
+  no_edge_pruning:      {model.edge_pruning: false}
+  dense_kg_attention:   {model.kg_attention: dense, training.batch_size: 8, training.grad_accum: 8}
+  k5:                   {knowledge_graph.top_k: 5}
+  k10:                  {knowledge_graph.top_k: 10}
+  k40:                  {knowledge_graph.top_k: 40}

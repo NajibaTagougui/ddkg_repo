@@ -1,0 +1,77 @@
+# DDKG base config. Override anything from the CLI:  --set model.hidden_dim=384
+run:
+  name: ddkg
+  seed: 0
+  out_dir: results/coco/full/seed0
+
+data:
+  dataset: coco                         # coco | flickr30k
+  karpathy_json: /data/karpathy/dataset_coco.json
+  image_root: /data/coco                # coco: contains train2014/ val2014/ ; flickr30k: folder with the .jpg files
+  feature_root: /data/features/coco     # written by scripts/extract_features.py
+  vocab_path: /data/features/coco/vocab.json
+  min_word_freq: 5
+  max_caption_len: 22                   # tokens incl. <sos>/<eos>
+  num_workers: 4
+
+features:
+  num_objects: 36
+  feat_dim: 1024                        # Faster R-CNN box-head feature size (torchvision)
+
+knowledge_graph:
+  embed_path: /data/kg/conceptnet_numberbatch.npy
+  vocab_path: /data/kg/conceptnet_vocab.json
+  require_real: true                    # refuse to run with random embeddings
+  top_k: 20
+  gate_threshold: 0.3
+  static_gate: false                    # ablation: uniform concept weights
+
+model:
+  mode: ddkg                            # ddkg | baseline (region Transformer encoder, no graphs/KG)
+  hidden_dim: 512
+  num_layers: 3                         # dual-graph encoder layers
+  gat_heads: 4
+  attn_heads: 8
+  decoder_layers: 6
+  ffn_dim: 2048
+  dropout: 0.1
+  relation_hidden: 256
+  pruning_ratio: 0.3
+  edge_pruning: true
+  use_kg: true
+  use_cross_attn: true
+  kg_attention: grouped                 # grouped | dense
+  caption_gating: true                  # per-token concept gate inside the decoder
+  gate_dim: 128
+
+training:
+  epochs: 25
+  batch_size: 32
+  grad_accum: 2
+  lr: 5.0e-5
+  min_lr: 1.0e-6
+  weight_decay: 0.01
+  warmup_steps: 2000
+  max_grad_norm: 1.0
+  label_smoothing: 0.1
+  all_captions: false                   # false: one random caption per image per epoch
+  patience: 6                           # early stop on val CIDEr (epochs)
+  loss_weights:
+    sparsity: 0.01
+    gate_l1: 0.0                        # off by default
+    consistency: 0.01
+
+eval:
+  val_images: 1000
+  val_beam: 1
+  test_beam: 3
+  max_len: 20
+  length_penalty: 0.7
+  batch_size: 64
+  official: true                        # use pycocoevalcap (Java) for the final test metrics
+
+hardware:
+  device: cuda
+  amp: true                             # bf16 autocast
+  compile: false
+  log_every: 100
